@@ -1,16 +1,24 @@
 import React, { useState } from "react";
 import dayjs from "dayjs";
-import DayView from "./DayView";
-import WeekView from "./WeekView";
-import MonthView from "./MonthView";
-import YearView from "./YearView";
+import DayView from "../views/DayView";
+import WeekView from "../views/WeekView";
+import MonthView from "../views/MonthView";
+import YearView from "../views/YearView";
+import EventForm from "../components/EventForm";
 import { motion, AnimatePresence } from "framer-motion";
 
 const CalendarGrid = ({ events, setEvents }) => {
+  const [editingEvent, setEditingEvent] = useState(null);
   const [view, setView] = useState("week");
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [modal, setModal] = useState(null);
-  const [form, setForm] = useState({ title: "", startTime: "", endTime: "", date: "" });
+  const [form, setForm] = useState({
+    title: "",
+    startTime: "",
+    endTime: "",
+    date: "",
+    color: "#2196f3",
+  });
 
   const changeView = (v) => setView(v);
   const goToToday = () => {
@@ -20,25 +28,39 @@ const CalendarGrid = ({ events, setEvents }) => {
 
   const handleRC = (e, day, hour) => {
     e.preventDefault();
-    setModal({ x: e.clientX, y: e.clientY, date: day.format("YYYY-MM-DD"), hour });
+    setEditingEvent(null); // Clear previous edit
+    setModal({ position: "center" });
     setForm({
       title: "",
       date: day.format("YYYY-MM-DD"),
       startTime: `${hour.toString().padStart(2, "0")}:00`,
       endTime: `${(hour + 1).toString().padStart(2, "0")}:00`,
+      color: "#2196f3",
     });
   };
 
+  const handleEdit = (event) => {
+    setEditingEvent(event);
+    setForm({
+      title: event.title,
+      date: event.date,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      color: event.color,
+    });
+    setModal({ position: "center" });
+  };
+
   const saveEv = () => {
-    const [sh, sm] = form.startTime.split(":" ).map(Number);
-    const [eh, em] = form.endTime.split(":" ).map(Number);
-    const color = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
-    const ne = {
+    const [sh, sm] = form.startTime.split(":").map(Number);
+    const [eh, em] = form.endTime.split(":").map(Number);
+
+    const newEvent = {
       title: form.title,
       date: form.date,
       time: form.startTime,
       duration: `${form.startTime}-${form.endTime}`,
-      color,
+      color: form.color,
       startTime: form.startTime,
       endTime: form.endTime,
       startHour: sh,
@@ -46,13 +68,48 @@ const CalendarGrid = ({ events, setEvents }) => {
       endHour: eh,
       endMinute: em,
     };
-    setEvents((e) => [...e, ne]);
+
+    if (editingEvent) {
+      setEvents((prev) =>
+        prev.map((ev) =>
+          ev === editingEvent ? newEvent : ev
+        )
+      );
+    } else {
+      setEvents((prev) => [...prev, newEvent]);
+    }
+
     setModal(null);
+    setEditingEvent(null);
   };
 
   const shift = (dir) => {
-    const unit = view === "day" ? "day" : view === "week" ? "week" : view === "month" ? "month" : "year";
+    const unit =
+      view === "day"
+        ? "day"
+        : view === "week"
+        ? "week"
+        : view === "month"
+        ? "month"
+        : "year";
     setCurrentDate((d) => (dir > 0 ? d.add(1, unit) : d.subtract(1, unit)));
+  };
+
+  const getLabel = () => {
+    switch (view) {
+      case "day":
+        return currentDate.format("dddd, MMMM D, YYYY");
+      case "week":
+        const start = currentDate.startOf("week");
+        const end = currentDate.endOf("week");
+        return `${start.format("MMM D")} - ${end.format("MMM D, YYYY")}`;
+      case "month":
+        return currentDate.format("MMMM YYYY");
+      case "year":
+        return currentDate.format("YYYY");
+      default:
+        return "";
+    }
   };
 
   const variants = {
@@ -63,66 +120,71 @@ const CalendarGrid = ({ events, setEvents }) => {
 
   return (
     <div className="flex-1 bg-white relative p-4">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => shift(-1)}
-            disabled={view === "day"}
-            className={`px-3 py-1 rounded-md border border-gray-300 text-sm hover:bg-gray-100 transition ${view === "day" ? "opacity-30 cursor-not-allowed" : ""}`}
-          >
-            &larr;
-          </button>
+      {/* Header */}
+      <div className="grid grid-cols-3 items-center mb-4">
+        {/* Left */}
+        <div className="flex items-center gap-3">
           <button
             onClick={goToToday}
-            className="px-3 py-1 rounded-md border border-gray-300 text-sm hover:bg-gray-100 transition"
+            className="px-4 py-1.5 rounded-full border border-gray-400 text-sm font-medium text-black hover:bg-gray-100 transition"
           >
             Today
           </button>
           <button
-            onClick={() => shift(1)}
-            disabled={view === "year"}
-            className={`px-3 py-1 rounded-md border border-gray-300 text-sm hover:bg-gray-100 transition ${view === "year" ? "opacity-30 cursor-not-allowed" : ""}`}
+            onClick={() => shift(-1)}
+            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-400 text-lg font-light hover:bg-gray-100 transition"
+            title="Previous"
           >
-            &rarr;
+            ❮
           </button>
+          <button
+            onClick={() => shift(1)}
+            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-400 text-lg font-light hover:bg-gray-100 transition"
+            title="Next"
+          >
+            ❯
+          </button>
+          <div className="ml-4 text-lg font-semibold text-gray-800">
+            {getLabel()}
+          </div>
         </div>
 
-        <div className="flex gap-2">
-          {['day', 'week', 'month', 'year'].map((v) => (
-            <button
-              key={v}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition ${
-                view === v
-                  ? 'bg-red-500 text-white'
-                  : 'border border-gray-100 text-gray-700 hover:bg-gray-100'
-              }`}
-              onClick={() => changeView(v)}
-            >
-              {v.charAt(0).toUpperCase() + v.slice(1)}
-            </button>
-          ))}
+        {/* Center View Buttons */}
+        <div className="flex justify-center">
+          <div className="flex gap-2">
+            {["day", "week", "month", "year"].map((v) => (
+              <button
+                key={v}
+                className={`px-3 py-1 rounded-md text-sm font-medium transition ${
+                  view === v
+                    ? "bg-red-500 text-white"
+                    : "border border-gray-200 text-gray-700 hover:bg-gray-100"
+                }`}
+                onClick={() => changeView(v)}
+              >
+                {v.charAt(0).toUpperCase() + v.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <input
-          placeholder="Search"
-          className="border border-gray-300 px-2 py-1 rounded-md text-sm"
-        />
       </div>
 
+      {/* View Content */}
       <AnimatePresence mode="wait">
         {view === "day" && (
           <motion.div key="day" variants={variants} initial="initial" animate="animate" exit="exit">
-            <DayView currentDate={currentDate} events={events} onRightClick={handleRC} />
+            <DayView currentDate={currentDate} events={events} onRightClick={handleRC} onEdit={handleEdit} />
           </motion.div>
         )}
         {view === "week" && (
           <motion.div key="week" variants={variants} initial="initial" animate="animate" exit="exit">
-            <WeekView currentDate={currentDate} events={events} onRightClick={handleRC} />
+            <WeekView currentDate={currentDate} events={events} onRightClick={handleRC} onEdit={handleEdit} />
           </motion.div>
         )}
         {view === "month" && (
           <motion.div key="month" variants={variants} initial="initial" animate="animate" exit="exit">
-            <MonthView currentDate={currentDate} events={events} />
+            <MonthView currentDate={currentDate} events={events} onRightClick={handleRC} />
           </motion.div>
         )}
         {view === "year" && (
@@ -132,50 +194,19 @@ const CalendarGrid = ({ events, setEvents }) => {
         )}
       </AnimatePresence>
 
-      {modal && (
-        <div
-          className="absolute bg-white border border-gray-300 rounded p-4 shadow-md z-10"
-          style={{ top: modal.y, left: modal.x }}
-        >
-          <h3 className="font-semibold mb-2">Add Event</h3>
-          <input
-            placeholder="Title"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="border border-gray-300 mb-2 w-full px-2 py-1 rounded-md text-sm"
+      {/* Modal */}
+        {modal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <EventForm
+            modal={modal}
+            form={form}
+            setForm={setForm}
+            onSave={saveEv}
+            onClose={() => {
+              setModal(null);
+              setEditingEvent(null);
+            }}
           />
-          <input
-            type="time"
-            value={form.startTime}
-            onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-            className="border border-gray-300 mb-2 w-full px-2 py-1 rounded-md text-sm"
-          />
-          <input
-            type="time"
-            value={form.endTime}
-            onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-            className="border border-gray-300 mb-2 w-full px-2 py-1 rounded-md text-sm"
-          />
-          <input
-            type="date"
-            value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
-            className="border border-gray-300 mb-2 w-full px-2 py-1 rounded-md text-sm"
-          />
-          <div className="flex gap-2 mt-2">
-            <button
-              onClick={saveEv}
-              className="bg-blue-500 text-white px-4 py-1 rounded-md flex-1 text-sm"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setModal(null)}
-              className="border border-gray-300 px-4 py-1 rounded-md flex-1 text-sm"
-            >
-              Cancel
-            </button>
-          </div>
         </div>
       )}
     </div>
