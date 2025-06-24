@@ -1,35 +1,31 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect } from "react";
+import Sidebar from "./components/Sidebar";
+import CalendarGrid from "./components/CalendarGrid";
+import eventsData from "./data/events.json";
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+  const [events, setEvents] = useState([]); // Global event state
+
+  useEffect(() => {
+    // Normalize JSON format to include required fields
+    const normalized = eventsData.map((e) => ({
+      title: e.title,
+      date: e.date || new Date().toISOString().slice(0, 10),
+      time: e.startTime,
+      duration: `${e.startTime} - ${e.endTime}`,
+      color: e.color || "#3b82f6",
+      startTime: e.startTime,
+      endTime: e.endTime,
+    }));
+    setEvents(normalized);
+  }, []);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div className="flex h-screen w-screen overflow-hidden">
+      <Sidebar events={events} setEvents={setEvents} />
+      <CalendarGrid events={events} setEvents={setEvents} />
+    </div>
+  );
+};
 
-export default App
+export default App;
