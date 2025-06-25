@@ -24,7 +24,15 @@ const EventForm = ({ modal, form = {}, setForm, onSave, onClose }) => {
     form.endTime >= form.startTime;
 
   return (
-    <div className="fixed top-1/2 left-1/2 z-50 transform -translate-x-1/2 -translate-y-1/2 bg-white border border-gray-300 rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw]">
+    <div
+      className="fixed top-1/2 left-1/2 z-50 transform -translate-x-1/2 -translate-y-1/2 bg-white border border-gray-300 rounded-xl shadow-2xl p-6 w-[400px] max-w-[90vw]"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && isValid) {
+          e.preventDefault();
+          onSave();
+        }
+      }}
+    >
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-xl font-semibold text-gray-800 tracking-wide">
@@ -81,9 +89,7 @@ const EventForm = ({ modal, form = {}, setForm, onSave, onClose }) => {
 
         <select
           value={form.endTime}
-          onChange={(e) =>
-            setForm({ ...form, endTime: e.target.value })
-          }
+          onChange={(e) => setForm({ ...form, endTime: e.target.value })}
           className="flex-1 border border-gray-300 rounded-md px-2 py-2 text-sm"
         >
           {timeOptions
@@ -116,7 +122,7 @@ const EventForm = ({ modal, form = {}, setForm, onSave, onClose }) => {
           />
         ))}
 
-        {/* Custom Color with Pencil Icon */}
+        {/* Custom Color */}
         <div className="relative">
           <button
             onClick={() => {
