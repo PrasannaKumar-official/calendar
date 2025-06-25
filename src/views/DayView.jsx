@@ -18,8 +18,43 @@ const formatTime12 = (t) => {
   return `${displayHour}:${m.toString().padStart(2, "0")} ${isPM ? "PM" : "AM"}`;
 };
 
+const isOverlapping = (a, b) => {
+  const startA = dayjs(`${a.date}T${a.startTime}`);
+  const endA = dayjs(`${a.date}T${a.endTime}`);
+  const startB = dayjs(`${b.date}T${b.startTime}`);
+  const endB = dayjs(`${b.date}T${b.endTime}`);
+  return startA.isBefore(endB) && endA.isAfter(startB);
+};
+
+const groupOverlappingEvents = (dayEvents) => {
+  const columns = [];
+
+  dayEvents.forEach((ev) => {
+    let placed = false;
+    for (const col of columns) {
+      if (!col.some((e) => isOverlapping(e, ev))) {
+        col.push(ev);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      columns.push([ev]);
+    }
+  });
+
+  return columns;
+};
+
 const DayView = ({ currentDate, events, onRightClick, onEventClick }) => {
   const hours = Array.from({ length: 24 }, (_, i) => i);
+
+  const todayEvents = events.filter((e) =>
+    dayjs(e.date).isSame(currentDate, "day")
+  );
+
+  const columns = groupOverlappingEvents(todayEvents);
+  const totalColumns = columns.length;
 
   return (
     <div className="h-full overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
@@ -45,7 +80,7 @@ const DayView = ({ currentDate, events, onRightClick, onEventClick }) => {
           ))}
         </div>
 
-        {/* Slots and Events */}
+        {/* Time slots + overlapping events */}
         <div className="col-span-5 relative">
           {hours.map((hour) => (
             <div
@@ -56,13 +91,21 @@ const DayView = ({ currentDate, events, onRightClick, onEventClick }) => {
             />
           ))}
 
-          {/* Events */}
-          {events
-            .filter((event) => dayjs(event.date).isSame(currentDate, "day"))
-            .map((event, i) => {
-              const top = (event.startHour + event.startMinute / 60) * 4;
+          {/* Render overlapping columns */}
+          {columns.map((column, colIndex) =>
+            column.map((event, i) => {
+              // 🛠 Safely derive hour/minute if not available
+              const [sh, sm] = event.startTime?.split(":").map(Number) || [0, 0];
+              const [eh, em] = event.endTime?.split(":").map(Number) || [0, 0];
+
+              const startHour = event.startHour ?? sh;
+              const startMinute = event.startMinute ?? sm;
+              const endHour = event.endHour ?? eh;
+              const endMinute = event.endMinute ?? em;
+
+              const top = (startHour + startMinute / 60) * 4;
               const duration =
-                (event.endHour + event.endMinute / 60 - event.startHour - event.startMinute / 60) * 4;
+                (endHour + endMinute / 60 - startHour - startMinute / 60) * 4;
 
               const fontSize =
                 duration > 3
@@ -75,13 +118,15 @@ const DayView = ({ currentDate, events, onRightClick, onEventClick }) => {
 
               return (
                 <div
-                  key={i}
-                  onClick={() => onEventClick(event)} 
-                  className={`cursor-pointer absolute left-2 right-2 mx-auto text-white text-opacity-90 p-2.5 rounded-lg shadow-sm font-medium ${fontSize}`}
+                  key={`${event.title}-${i}-${colIndex}`}
+                  onClick={() => onEventClick(event)}
+                  className={`cursor-pointer absolute text-white text-opacity-90 p-2.5 rounded-lg shadow-sm font-medium ${fontSize}`}
                   style={{
                     top: `${top}rem`,
                     height: `${duration}rem`,
                     backgroundColor: hexToRgba(event.color, 0.7),
+                    left: `${(colIndex / totalColumns) * 100}%`,
+                    width: `${100 / totalColumns}%`,
                   }}
                 >
                   <div className="text-lg font-bold leading-tight truncate">
@@ -92,7 +137,8 @@ const DayView = ({ currentDate, events, onRightClick, onEventClick }) => {
                   </div>
                 </div>
               );
-            })}
+            })
+          )}
         </div>
       </div>
     </div>

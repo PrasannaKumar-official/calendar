@@ -1,5 +1,6 @@
 import React from "react";
 import dayjs from "dayjs";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload"; // Make sure MUI Icons is installed
 
 const CalendarHeader = ({
   currentDate,
@@ -7,6 +8,7 @@ const CalendarHeader = ({
   view,
   setView,
   setSelectedDate,
+  setEvents, // For uploading events
 }) => {
   const goToToday = () => {
     const today = dayjs();
@@ -19,9 +21,7 @@ const CalendarHeader = ({
 
   const shift = (dir) => {
     const unit = view;
-    setCurrentDate((d) =>
-      dir > 0 ? d.add(1, unit) : d.subtract(1, unit)
-    );
+    setCurrentDate((d) => (dir > 0 ? d.add(1, unit) : d.subtract(1, unit)));
   };
 
   const getLabel = () => {
@@ -43,8 +43,36 @@ const CalendarHeader = ({
     }
   };
 
+  // ✅ Upload Handler
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const text = await file.text();
+    try {
+      const json = JSON.parse(text);
+      const parsed = json.map((ev) => {
+        const [sh, sm] = ev.startTime.split(":").map(Number);
+        const [eh, em] = ev.endTime.split(":").map(Number);
+        return {
+          ...ev,
+          date: dayjs().format("YYYY-MM-DD"),
+          startHour: sh,
+          startMinute: sm,
+          endHour: eh,
+          endMinute: em,
+        };
+      });
+
+      setEvents((prev) => [...prev, ...parsed]);
+    } catch (err) {
+      alert("⚠️ Invalid JSON format.");
+      console.error(err);
+    }
+  };
+
   return (
-    <div className="relative flex items-center justify-between mb-4 h-12">
+    <div className="relative flex items-center justify-between mb-4 h-14 px-2">
       {/* Left: Navigation & Label */}
       <div className="flex items-center gap-3 z-10">
         <button
@@ -70,7 +98,7 @@ const CalendarHeader = ({
         </div>
       </div>
 
-      {/* Center: View Switcher - Fixed Position */}
+      {/* Center: View Switcher */}
       <div className="absolute left-1/2 transform -translate-x-1/2 flex gap-2 z-0">
         {["day", "week", "month", "year"].map((v) => (
           <button
@@ -78,13 +106,27 @@ const CalendarHeader = ({
             onClick={() => setView(v)}
             className={`px-3 py-1 rounded-md text-sm font-medium transition ${
               view === v
-                ? "bg-red-500 text-white"
-                : "border border-gray-200 text-gray-700 hover:bg-gray-100"
+                ? "bg-blue-600 text-white"
+                : "border border-gray-300 text-gray-700 hover:bg-gray-100"
             }`}
           >
             {v.charAt(0).toUpperCase() + v.slice(1)}
           </button>
         ))}
+      </div>
+
+      {/* Right: Upload Button */}
+      <div className="z-10">
+        <label className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white text-sm px-4 py-1.5 rounded-full shadow-md cursor-pointer transition">
+          <CloudUploadIcon style={{ fontSize: "18px" }} />
+          Upload JSON
+          <input
+            type="file"
+            accept=".json"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+        </label>
       </div>
     </div>
   );
