@@ -9,7 +9,7 @@ const formatTime12 = (t) => {
   return `${displayHour}:${m.toString().padStart(2, "0")} ${isPM ? "PM" : "AM"}`;
 };
 
-const MonthView = ({ currentDate, events, onRightClick }) => {
+const MonthView = ({ currentDate, events, onRightClick, onEventClick }) => {
   const startOfMonth = currentDate.startOf("month");
   const endOfMonth = currentDate.endOf("month");
   const startDay = startOfMonth.day();
@@ -69,7 +69,7 @@ const MonthView = ({ currentDate, events, onRightClick }) => {
               current ? "bg-white" : "bg-gray-50 text-gray-400"
             }`}
             style={{ minHeight: "6.5rem" }}
-            onClick={(e) => onRightClick(e, date, 9)} // Default 9AM when clicked
+            onClick={(e) => onRightClick(e, date, 9)} // Default 9AM
           >
             <div className="text-sm font-medium text-right pr-1">{date.date()}</div>
 
@@ -78,6 +78,10 @@ const MonthView = ({ currentDate, events, onRightClick }) => {
               {dayEvents.map((e, j) => (
                 <div
                   key={j}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    onEventClick(e); // ✅ Show popup
+                  }}
                   className={`rounded-md text-white font-semibold shadow-sm truncate ${padding} ${fontSize}`}
                   style={{ backgroundColor: e.color }}
                   title={`${e.title} (${formatTime12(e.startTime)} - ${formatTime12(e.endTime)})`}

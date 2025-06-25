@@ -1,7 +1,7 @@
 import React from "react";
 import dayjs from "dayjs";
 
-const WeekView = ({ currentDate, events = [], onRightClick, onEdit }) => {
+const WeekView = ({ currentDate, events = [], onRightClick, onEventClick }) => {
   const days = Array.from({ length: 7 }, (_, i) =>
     currentDate.startOf("week").add(i, "day")
   );
@@ -52,45 +52,45 @@ const WeekView = ({ currentDate, events = [], onRightClick, onEdit }) => {
             ))}
 
             {/* Events for the day */}
-{(events || [])
-  .filter((e) => dayjs(e.date).isSame(d, "day"))
-  .map((ev, i) => {
-    const top = (ev.startHour + ev.startMinute / 60) * 4;
-    const dur =
-      (ev.endHour +
-        ev.endMinute / 60 -
-        ev.startHour -
-        ev.startMinute / 60) * 4;
+            {(events || [])
+              .filter((e) => dayjs(e.date).isSame(d, "day"))
+              .map((ev, i) => {
+                const top = (ev.startHour + ev.startMinute / 60) * 4;
+                const dur =
+                  (ev.endHour +
+                    ev.endMinute / 60 -
+                    ev.startHour -
+                    ev.startMinute / 60) * 4;
 
-    // Font size based on duration
-    const fontSize =
-      dur >= 4
-        ? "text-lg"
-        : dur >= 2
-        ? "text-base"
-        : "text-sm";
+                const fontSize =
+                  dur >= 4
+                    ? "text-lg"
+                    : dur >= 2
+                    ? "text-base"
+                    : "text-sm";
 
-    return (
-      <div
-        key={i}
-        onClick={() => onEdit?.(ev)}
-        className={`absolute left-1 right-1 p-2 rounded-md shadow-sm cursor-pointer overflow-hidden hover:shadow-md ${fontSize} font-bold`}
-        style={{
-          top: `${top}rem`,
-          height: `${dur}rem`,
-          backgroundColor: "#e0f2fe",
-          color: "#0f172a",
-          borderLeft: `4px solid ${ev.color}`,
-        }}
-      >
-        <div className="text-xs text-gray-600 font-medium">
-          {dayjs(`${ev.date}T${ev.startTime}`).format("h:mm A")}
-        </div>
-        <div className="truncate">{ev.title}</div>
-      </div>
-    );
-  })}
+                const bgColor = `${ev.color}20`; // Light background
 
+                return (
+                  <div
+                    key={i}
+                    onClick={() => onEventClick(ev)} // ✅ Trigger popup
+                    className={`absolute left-1 right-1 p-2 rounded-md shadow-sm cursor-pointer overflow-hidden hover:shadow-md ${fontSize} font-bold`}
+                    style={{
+                      top: `${top}rem`,
+                      height: `${dur}rem`,
+                      backgroundColor: bgColor,
+                      color: "#0f172a",
+                      borderLeft: `4px solid ${ev.color}`,
+                    }}
+                  >
+                    <div className="text-xs text-gray-600 font-medium">
+                      {dayjs(`${ev.date}T${ev.startTime}`).format("h:mm A")}
+                    </div>
+                    <div className="truncate">{ev.title}</div>
+                  </div>
+                );
+              })}
           </div>
         ))}
       </div>

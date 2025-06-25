@@ -1,17 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import dayjs from "dayjs";
-import DayView from "../views/DayView";
-import WeekView from "../views/WeekView";
-import MonthView from "../views/MonthView";
-import YearView from "../views/YearView";
-import EventForm from "../components/EventForm";
-import { motion, AnimatePresence } from "framer-motion";
+import CalendarHeader from "./CalendarHeader";
+import CalendarViewRenderer from "./CalendarViewRenderer";
+import EventForm from "./EventForm";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 
-const CalendarGrid = ({ events, setEvents }) => {
+const CalendarGrid = ({
+  events,
+  setEvents,
+  currentDate,
+  setCurrentDate,
+  view,
+  setView,
+}) => {
   const [editingEvent, setEditingEvent] = useState(null);
-  const [view, setView] = useState("week");
-  const [currentDate, setCurrentDate] = useState(dayjs());
   const [modal, setModal] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [form, setForm] = useState({
     title: "",
     startTime: "",
@@ -20,15 +25,23 @@ const CalendarGrid = ({ events, setEvents }) => {
     color: "#2196f3",
   });
 
-  const changeView = (v) => setView(v);
-  const goToToday = () => {
-    setCurrentDate(dayjs());
-    setView("week");
-  };
+  const isFirstLoad = useRef(true);
+  const prevDateRef = useRef(currentDate);
+
+  useEffect(() => {
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+      return;
+    }
+    if (!dayjs(currentDate).isSame(prevDateRef.current, "day")) {
+      setView(view); // ensure refresh on date change
+    }
+    prevDateRef.current = currentDate;
+  }, [currentDate]);
 
   const handleRC = (e, day, hour) => {
     e.preventDefault();
-    setEditingEvent(null); // Clear previous edit
+    setEditingEvent(null);
     setModal({ position: "center" });
     setForm({
       title: "",
@@ -48,7 +61,13 @@ const CalendarGrid = ({ events, setEvents }) => {
       endTime: event.endTime,
       color: event.color,
     });
-    setModal({ position: "center" });
+    setModal({ position: "center", editMode: true });
+    setSelectedEvent(null); // close mini popup
+  };
+
+  const handleDelete = (event) => {
+    setEvents((prev) => prev.filter((ev) => ev !== event));
+    setSelectedEvent(null);
   };
 
   const saveEv = () => {
@@ -71,9 +90,7 @@ const CalendarGrid = ({ events, setEvents }) => {
 
     if (editingEvent) {
       setEvents((prev) =>
-        prev.map((ev) =>
-          ev === editingEvent ? newEvent : ev
-        )
+        prev.map((ev) => (ev === editingEvent ? newEvent : ev))
       );
     } else {
       setEvents((prev) => [...prev, newEvent]);
@@ -83,119 +100,28 @@ const CalendarGrid = ({ events, setEvents }) => {
     setEditingEvent(null);
   };
 
-  const shift = (dir) => {
-    const unit =
-      view === "day"
-        ? "day"
-        : view === "week"
-        ? "week"
-        : view === "month"
-        ? "month"
-        : "year";
-    setCurrentDate((d) => (dir > 0 ? d.add(1, unit) : d.subtract(1, unit)));
-  };
-
-  const getLabel = () => {
-    switch (view) {
-      case "day":
-        return currentDate.format("dddd, MMMM D, YYYY");
-      case "week":
-        const start = currentDate.startOf("week");
-        const end = currentDate.endOf("week");
-        return `${start.format("MMM D")} - ${end.format("MMM D, YYYY")}`;
-      case "month":
-        return currentDate.format("MMMM YYYY");
-      case "year":
-        return currentDate.format("YYYY");
-      default:
-        return "";
-    }
-  };
-
-  const variants = {
-    initial: { opacity: 0, x: 50 },
-    animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -50 },
-  };
-
   return (
     <div className="flex-1 bg-white relative p-4">
       {/* Header */}
-      <div className="grid grid-cols-3 items-center mb-4">
-        {/* Left */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={goToToday}
-            className="px-4 py-1.5 rounded-full border border-gray-400 text-sm font-medium text-black hover:bg-gray-100 transition"
-          >
-            Today
-          </button>
-          <button
-            onClick={() => shift(-1)}
-            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-400 text-lg font-light hover:bg-gray-100 transition"
-            title="Previous"
-          >
-            ❮
-          </button>
-          <button
-            onClick={() => shift(1)}
-            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-400 text-lg font-light hover:bg-gray-100 transition"
-            title="Next"
-          >
-            ❯
-          </button>
-          <div className="ml-4 text-lg font-semibold text-gray-800">
-            {getLabel()}
-          </div>
-        </div>
+      <CalendarHeader
+        currentDate={currentDate}
+        setCurrentDate={setCurrentDate}
+        view={view}
+        setView={setView}
+      />
 
-        {/* Center View Buttons */}
-        <div className="flex justify-center">
-          <div className="flex gap-2">
-            {["day", "week", "month", "year"].map((v) => (
-              <button
-                key={v}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition ${
-                  view === v
-                    ? "bg-red-500 text-white"
-                    : "border border-gray-200 text-gray-700 hover:bg-gray-100"
-                }`}
-                onClick={() => changeView(v)}
-              >
-                {v.charAt(0).toUpperCase() + v.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* View Renderer */}
+      <CalendarViewRenderer
+        view={view}
+        currentDate={currentDate}
+        events={events}
+        handleRC={handleRC}
+        handleEdit={handleEdit}
+        onEventClick={setSelectedEvent}
+      />
 
-      </div>
-
-      {/* View Content */}
-      <AnimatePresence mode="wait">
-        {view === "day" && (
-          <motion.div key="day" variants={variants} initial="initial" animate="animate" exit="exit">
-            <DayView currentDate={currentDate} events={events} onRightClick={handleRC} onEdit={handleEdit} />
-          </motion.div>
-        )}
-        {view === "week" && (
-          <motion.div key="week" variants={variants} initial="initial" animate="animate" exit="exit">
-            <WeekView currentDate={currentDate} events={events} onRightClick={handleRC} onEdit={handleEdit} />
-          </motion.div>
-        )}
-        {view === "month" && (
-          <motion.div key="month" variants={variants} initial="initial" animate="animate" exit="exit">
-            <MonthView currentDate={currentDate} events={events} onRightClick={handleRC} />
-          </motion.div>
-        )}
-        {view === "year" && (
-          <motion.div key="year" variants={variants} initial="initial" animate="animate" exit="exit">
-            <YearView currentDate={currentDate} events={events} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal */}
-        {modal && (
+      {/* Create/Edit Modal - No dark overlay */}
+      {modal && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <EventForm
             modal={modal}
@@ -207,6 +133,40 @@ const CalendarGrid = ({ events, setEvents }) => {
               setEditingEvent(null);
             }}
           />
+        </div>
+      )}
+
+      {/* Mini Event Info Popup */}
+      {selectedEvent && (
+        <div className="fixed top-[20%] left-1/2 transform -translate-x-1/2 bg-white shadow-2xl border border-gray-200 rounded-xl p-5 w-72 z-50">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-semibold text-gray-800">
+              {selectedEvent.title}
+            </h3>
+            <button
+              onClick={() => setSelectedEvent(null)}
+              className="text-gray-500 hover:text-red-500 text-xl font-bold"
+            >
+              ×
+            </button>
+          </div>
+          <p className="text-sm text-gray-600 mb-3">
+            {selectedEvent.startTime} – {selectedEvent.endTime}
+          </p>
+          <div className="flex justify-end gap-4">
+            <button
+              onClick={() => handleEdit(selectedEvent)}
+              className="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-sm"
+            >
+              <EditIcon fontSize="small" /> Edit
+            </button>
+            <button
+              onClick={() => handleDelete(selectedEvent)}
+              className="flex items-center gap-1 text-red-600 hover:text-red-800 font-medium text-sm"
+            >
+              <DeleteIcon fontSize="small" /> Delete
+            </button>
+          </div>
         </div>
       )}
     </div>
