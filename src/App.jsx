@@ -7,7 +7,8 @@ import dayjs from "dayjs";
 const App = () => {
   const [events, setEvents] = useState(initialEvents || []);
   const [currentDate, setCurrentDate] = useState(dayjs());
-  const [view, setView] = useState("week"); // 👈 Add this
+  const [view, setView] = useState("week");
+  const [selectedDate, setSelectedDate] = useState(dayjs()); // ✅ Added
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
@@ -17,7 +18,10 @@ const App = () => {
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
         setView={setView}
+        selectedDate={selectedDate} // ✅ Now works
+        setSelectedDate={setSelectedDate}
       />
+
       <CalendarGrid
         events={events}
         setEvents={setEvents}
@@ -25,6 +29,7 @@ const App = () => {
         setCurrentDate={setCurrentDate}
         view={view}
         setView={setView}
+        setSelectedDate={setSelectedDate}
       />
     </div>
   );

@@ -13,6 +13,7 @@ const CalendarGrid = ({
   setCurrentDate,
   view,
   setView,
+  setSelectedDate,
 }) => {
   const [editingEvent, setEditingEvent] = useState(null);
   const [modal, setModal] = useState(null);
@@ -34,7 +35,7 @@ const CalendarGrid = ({
       return;
     }
     if (!dayjs(currentDate).isSame(prevDateRef.current, "day")) {
-      setView(view); // ensure refresh on date change
+      setView(view); // trigger refresh
     }
     prevDateRef.current = currentDate;
   }, [currentDate]);
@@ -43,6 +44,7 @@ const CalendarGrid = ({
     e.preventDefault();
     setEditingEvent(null);
     setModal({ position: "center" });
+    if (setSelectedDate) setSelectedDate(day);
     setForm({
       title: "",
       date: day.format("YYYY-MM-DD"),
@@ -62,7 +64,7 @@ const CalendarGrid = ({
       color: event.color,
     });
     setModal({ position: "center", editMode: true });
-    setSelectedEvent(null); // close mini popup
+    setSelectedEvent(null);
   };
 
   const handleDelete = (event) => {
@@ -88,6 +90,7 @@ const CalendarGrid = ({
       endMinute: em,
     };
 
+    // ✅ Overlapping allowed — remove conflict alert
     if (editingEvent) {
       setEvents((prev) =>
         prev.map((ev) => (ev === editingEvent ? newEvent : ev))
@@ -108,6 +111,7 @@ const CalendarGrid = ({
         setCurrentDate={setCurrentDate}
         view={view}
         setView={setView}
+        setEvents={setEvents}
       />
 
       {/* View Renderer */}
@@ -120,7 +124,7 @@ const CalendarGrid = ({
         onEventClick={setSelectedEvent}
       />
 
-      {/* Create/Edit Modal - No dark overlay */}
+      {/* Modal Form */}
       {modal && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <EventForm
