@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import dayjs from "dayjs";
-import CreateButton from "./CreateButton";
 import MiniCalendar from "./MiniCalendar";
 import EventList from "./EventList";
 import EventForm from "../EventForm";
@@ -28,12 +27,14 @@ const Sidebar = ({ events, setEvents, setCurrentDate, currentDate, setView }) =>
   };
 
   const saveEvent = () => {
+    if (!form.title.trim()) return;
+
     const [sh, sm] = form.startTime.split(":").map(Number);
     const [eh, em] = form.endTime.split(":").map(Number);
 
     const newEvent = {
       title: form.title,
-      date: form.date, // must be YYYY-MM-DD
+      date: form.date,
       time: form.startTime,
       duration: `${form.startTime}-${form.endTime}`,
       color: form.color,
@@ -45,32 +46,20 @@ const Sidebar = ({ events, setEvents, setCurrentDate, currentDate, setView }) =>
       endMinute: em,
     };
 
-    if (!form.title.trim()) return; // prevent empty titles
-
-    setEvents((prev) => [...prev, newEvent]); // ✅ global event update
-
-    // Reset form
+    setEvents((prev) => [...prev, newEvent]);
     setShowForm(false);
-    setForm({
-      title: "",
-      date: dayjs().format("YYYY-MM-DD"),
-      startTime: "09:00",
-      endTime: "10:00",
-      color: "#2196f3",
-    });
+    resetForm();
   };
 
-
   return (
-    <div className="w-72 bg-black text-white p-4 border-r border-gray-800 flex flex-col overflow-y-auto relative">
+    <div className="w-72 bg-black text-white p-4 border-r border-gray-800 flex flex-col overflow-y-auto">
       {/* Create Button */}
-    <button
-      onClick={() => setShowForm(true)}
-      className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg mb-4 font-semibold transition"
-    >
-      + Create Event
-    </button>
-
+      <button
+        onClick={() => setShowForm(true)}
+        className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg mb-4 font-semibold transition cursor-pointer"
+      >
+        + Create Event
+      </button>
 
       {/* Mini Calendar */}
       <MiniCalendar
@@ -80,13 +69,13 @@ const Sidebar = ({ events, setEvents, setCurrentDate, currentDate, setView }) =>
         setView={setView}
       />
 
-      {/* Events */}
+      {/* Event List */}
       <EventList events={events} selectedDate={selectedDate} />
 
-      {/* Create Event Form - NO OVERLAY */}
+      {/* Modal Form - No overlay background */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="bg-white text-black shadow-2xl rounded-xl p-6 w-80">
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+          <div className="pointer-events-auto bg-white text-black rounded-xl shadow-2xl w-[400px] max-w-full p-5">
             <EventForm
               modal={{ position: "center" }}
               form={form}

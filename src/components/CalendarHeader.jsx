@@ -1,6 +1,6 @@
 import React from "react";
 import dayjs from "dayjs";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload"; // Make sure MUI Icons is installed
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 
 const CalendarHeader = ({
   currentDate,
@@ -8,15 +8,13 @@ const CalendarHeader = ({
   view,
   setView,
   setSelectedDate,
-  setEvents, // For uploading events
+  setEvents,
 }) => {
   const goToToday = () => {
     const today = dayjs();
     setCurrentDate(today);
     setView("week");
-    if (setSelectedDate) {
-      setSelectedDate(today);
-    }
+    if (setSelectedDate) setSelectedDate(today);
   };
 
   const shift = (dir) => {
@@ -43,7 +41,6 @@ const CalendarHeader = ({
     }
   };
 
-  // ✅ Upload Handler
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -61,6 +58,7 @@ const CalendarHeader = ({
           startMinute: sm,
           endHour: eh,
           endMinute: em,
+          duration: `${ev.startTime} - ${ev.endTime}`,
         };
       });
 
@@ -72,39 +70,42 @@ const CalendarHeader = ({
   };
 
   return (
-    <div className="relative flex items-center justify-between mb-4 h-14 px-2">
+    <div className="relative flex flex-col sm:flex-row sm:items-center justify-between mb-4 h-auto sm:h-14 px-2 gap-y-3 sm:gap-y-0">
       {/* Left: Navigation & Label */}
-      <div className="flex items-center gap-3 z-10">
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap z-10">
         <button
           onClick={goToToday}
-          className="px-4 py-1.5 rounded-full border border-gray-400 text-sm font-medium text-black hover:bg-gray-100 transition"
+          className="px-4 py-1.5 rounded-full border border-gray-400 text-sm font-medium text-black hover:bg-gray-100 transition cursor-pointer"
         >
           Today
         </button>
+
         <button
           onClick={() => shift(-1)}
-          className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-400 text-lg font-light hover:bg-gray-100"
+          className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-400 text-lg font-light hover:bg-gray-100 cursor-pointer"
         >
           ❮
         </button>
+
         <button
           onClick={() => shift(1)}
-          className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-400 text-lg font-light hover:bg-gray-100"
+          className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-400 text-lg font-light hover:bg-gray-100 cursor-pointer"
         >
           ❯
         </button>
-        <div className="ml-4 text-lg font-semibold text-gray-800">
+
+        <div className="ml-2 text-base sm:text-lg font-semibold text-gray-800">
           {getLabel()}
         </div>
       </div>
 
       {/* Center: View Switcher */}
-      <div className="absolute left-1/2 transform -translate-x-1/2 flex gap-2 z-0">
+      <div className="flex justify-center gap-2 sm:absolute sm:left-1/2 sm:-translate-x-1/2 z-0">
         {["day", "week", "month", "year"].map((v) => (
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`px-3 py-1 rounded-md text-sm font-medium transition ${
+            className={`px-3 py-1 rounded-md text-sm font-medium transition cursor-pointer ${
               view === v
                 ? "bg-blue-600 text-white"
                 : "border border-gray-300 text-gray-700 hover:bg-gray-100"
@@ -116,7 +117,7 @@ const CalendarHeader = ({
       </div>
 
       {/* Right: Upload Button */}
-      <div className="z-10">
+      <div className="z-10 flex justify-end">
         <label className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white text-sm px-4 py-1.5 rounded-full shadow-md cursor-pointer transition">
           <CloudUploadIcon style={{ fontSize: "18px" }} />
           Upload JSON

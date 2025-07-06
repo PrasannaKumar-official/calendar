@@ -1,14 +1,27 @@
 import React, { useState } from "react";
 import dayjs from "dayjs";
 
+const formatTime12 = (t) => {
+  const [h, m] = t.split(":").map(Number);
+  const isPM = h >= 12;
+  const displayHour = h % 12 || 12;
+  return `${displayHour}:${m.toString().padStart(2, "0")} ${isPM ? "PM" : "AM"}`;
+};
+
+const getFormattedTimeRange = (ev) => {
+  if (ev.startTime && ev.endTime) {
+    return `${formatTime12(ev.startTime)} - ${formatTime12(ev.endTime)}`;
+  }
+  return ev.duration || ""; 
+};
+
 const YearView = ({ currentDate, events }) => {
   const year = currentDate.year();
   const today = dayjs();
-  const [hovered, setHovered] = useState(null); // { id, date, events }
+  const [hovered, setHovered] = useState(null);
 
   return (
     <div className="flex-1 h-full overflow-y-auto px-4 pb-20 pr-2">
-      {/* 👆 pr-2 gives space before scrollbar */}
       <div className="grid grid-cols-4 gap-6 pt-4">
         {Array.from({ length: 12 }, (_, monthIdx) => {
           const monthDate = dayjs(`${year}-${monthIdx + 1}-01`);
@@ -26,9 +39,7 @@ const YearView = ({ currentDate, events }) => {
 
               <div className="grid grid-cols-7 text-xs text-gray-500 gap-y-1 mb-2">
                 {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
-                  <div key={d} className="text-center font-medium">
-                    {d}
-                  </div>
+                  <div key={d} className="text-center font-medium">{d}</div>
                 ))}
               </div>
 
@@ -95,11 +106,9 @@ const YearView = ({ currentDate, events }) => {
                           ) : (
                             hovered.events.map((ev, i) => (
                               <div key={i} className="mb-1">
-                                <div className="text-gray-900 font-medium">
-                                  {ev.title}
-                                </div>
+                                <div className="text-gray-900 font-medium">{ev.title}</div>
                                 <div className="text-gray-500">
-                                  {ev.duration}
+                                  {getFormattedTimeRange(ev)}
                                 </div>
                               </div>
                             ))

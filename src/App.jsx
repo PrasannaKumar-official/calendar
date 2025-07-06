@@ -8,17 +8,17 @@ const App = () => {
   const [events, setEvents] = useState(initialEvents || []);
   const [currentDate, setCurrentDate] = useState(dayjs());
   const [view, setView] = useState("week");
-  const [selectedDate, setSelectedDate] = useState(dayjs()); // ✅ Added
+  const [selectedDate, setSelectedDate] = useState(dayjs()); 
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden">
+      <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden">
       <Sidebar
         events={events}
         setEvents={setEvents}
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
         setView={setView}
-        selectedDate={selectedDate} // ✅ Now works
+        selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
       />
 
