@@ -1,0 +1,30 @@
+[
+  {
+    "title": "Daily Standup",
+    "date": "2025-06-26",
+    "startTime": "00:00",
+    "endTime": "01:30",
+    "color": "#f6be23"
+  },
+    {
+    "title": "Project",
+    "date": "2025-06-27",
+    "startTime": "14:30",
+    "endTime": "15:30",
+    "color": "#f6501e"
+  },
+  {
+    "title": "Meeting",
+    "date": "2025-06-28",
+    "startTime": "12:30",
+    "endTime": "13:30",
+    "color": "#f6501e"
+  },
+    {
+    "title": "Weekly Catchup",
+    "date": "2025-06-29",
+    "startTime": "20:30",
+    "endTime": "21:30",
+    "color": "#f6501e"
+  }
+]
